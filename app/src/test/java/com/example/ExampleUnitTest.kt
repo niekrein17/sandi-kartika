@@ -207,4 +207,71 @@ class ExampleUnitTest {
         assertEquals(com.example.service.TacticalTimeLockService.TimeLockStatus.ACTIVE_LOCKED, invalidEval.status)
         assertFalse(invalidEval.canDecryptNow)
     }
+
+    @Test
+    fun testAppDisguiseProfilesAndPersistence() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        
+        // Check default initial disguise
+        val initial = com.example.util.AppDisguiseManager.getActiveDisguise(context)
+        assertNotNull(initial)
+
+        // Verify all 4 profiles
+        val profiles = com.example.util.AppDisguiseManager.AppDisguiseProfile.values()
+        assertEquals(4, profiles.size)
+
+        val calcProfile = com.example.util.AppDisguiseManager.AppDisguiseProfile.CALCULATOR
+        assertEquals("MainActivityCalculatorDisguise", calcProfile.aliasSimpleName)
+        assertEquals("Kalkulator", calcProfile.displayName)
+        assertTrue(calcProfile.isCamouflage)
+
+        val toolsProfile = com.example.util.AppDisguiseManager.AppDisguiseProfile.SYSTEM_TOOLS
+        assertEquals("MainActivityToolsDisguise", toolsProfile.aliasSimpleName)
+        assertEquals("Alat Sistem", toolsProfile.displayName)
+        assertTrue(toolsProfile.isCamouflage)
+
+        val weatherProfile = com.example.util.AppDisguiseManager.AppDisguiseProfile.WEATHER_NOTES
+        assertEquals("MainActivityWeatherDisguise", weatherProfile.aliasSimpleName)
+        assertEquals("Catatan Cuaca", weatherProfile.displayName)
+        assertTrue(weatherProfile.isCamouflage)
+
+        val defaultProfile = com.example.util.AppDisguiseManager.AppDisguiseProfile.MILITARY_DEFAULT
+        assertEquals("MainActivityDefault", defaultProfile.aliasSimpleName)
+        assertEquals("SANDI-KARTIKA", defaultProfile.displayName)
+        assertFalse(defaultProfile.isCamouflage)
+
+        // Test applying and retrieving profile
+        val appliedCalc = com.example.util.AppDisguiseManager.applyDisguise(context, calcProfile)
+        assertTrue(appliedCalc)
+        assertEquals(calcProfile, com.example.util.AppDisguiseManager.getActiveDisguise(context))
+
+        // Revert to military default
+        val appliedDefault = com.example.util.AppDisguiseManager.applyDisguise(context, defaultProfile)
+        assertTrue(appliedDefault)
+        assertEquals(defaultProfile, com.example.util.AppDisguiseManager.getActiveDisguise(context))
+    }
+
+    @Test
+    fun testStandaloneHtmlGeneratorAirgapParity() {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val (file, uri) = com.example.stego.StandaloneHtmlGenerator.generateHtmlFile(context)
+
+        assertNotNull(file)
+        assertNotNull(uri)
+        assertTrue(file.exists())
+        assertTrue(file.length() > 5000)
+
+        val htmlContent = file.readText(Charsets.UTF_8)
+        // Verify 100% offline W3C Web Crypto API
+        assertTrue(htmlContent.contains("crypto.subtle"))
+        assertTrue(htmlContent.contains("PBKDF2"))
+        assertTrue(htmlContent.contains("AES-GCM"))
+        // Verify military commander override PIN
+        assertTrue(htmlContent.contains("PUSSIBERAD-991"))
+        // Verify binary header compatibility (SDKR)
+        assertTrue(htmlContent.contains("0x53, 0x44, 0x4B, 0x52"))
+        // Verify zero external network resources (no CDN or external scripts)
+        assertFalse(htmlContent.contains("http://"))
+        assertFalse(htmlContent.contains("https://"))
+    }
 }

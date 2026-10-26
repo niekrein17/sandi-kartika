@@ -79,6 +79,9 @@ import com.example.ui.theme.TacticalTextSecondary
 fun TacticalHeader(
     onPanicZeroize: () -> Unit,
     onLockCamouflage: () -> Unit,
+    onOpenDisguise: () -> Unit = {},
+    onOpenWebSuite: () -> Unit = {},
+    activeDisguiseName: String = "SANDI-KARTIKA",
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -103,7 +106,10 @@ fun TacticalHeader(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f, fill = false)
+            ) {
                 Box(
                     modifier = Modifier
                         .size(38.dp)
@@ -163,21 +169,57 @@ fun TacticalHeader(
                 }
             }
 
-            // Top Actions: Lock to Disguise & Panic Zeroize
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Top Actions: Web Suite, Change Disguise, Lock to Calculator & Panic Zeroize
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                IconButton(
+                    onClick = onOpenWebSuite,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(TacticalCardSurface)
+                        .border(1.dp, TacticalEmerald.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .size(38.dp)
+                        .testTag("open_web_suite_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = "Buka Web Suite Portabel (100% Offline)",
+                        tint = TacticalEmerald,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = onOpenDisguise,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(TacticalCardSurface)
+                        .border(1.dp, TacticalCyan.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                        .size(38.dp)
+                        .testTag("app_disguise_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Ganti Ikon & Nama Aplikasi (Disguise)",
+                        tint = TacticalCyan,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
                 IconButton(
                     onClick = onLockCamouflage,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(TacticalCardSurface)
-                        .border(1.dp, TacticalEmerald.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                        .size(40.dp)
+                        .border(1.dp, TacticalGold.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .size(38.dp)
                         .testTag("lock_to_calculator_button")
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Lock,
+                        imageVector = Icons.Default.Shield,
                         contentDescription = "Kunci ke Mode Penyamaran Kalkulator",
-                        tint = TacticalEmerald,
+                        tint = TacticalGold,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -188,14 +230,14 @@ fun TacticalHeader(
                         .clip(RoundedCornerShape(8.dp))
                         .background(TacticalAlertRedDim)
                         .border(1.dp, TacticalAlertRed, RoundedCornerShape(8.dp))
-                        .size(40.dp)
+                        .size(38.dp)
                         .testTag("panic_zeroize_button")
                 ) {
                     Icon(
                         imageVector = Icons.Default.DeleteSweep,
                         contentDescription = "Emergency Panic Zeroize Memory",
                         tint = TacticalAlertRed,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -224,8 +266,8 @@ fun TacticalHeader(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "STATUS: AIR-GAPPED (100% OFFLINE)",
-                    fontSize = 10.sp,
+                    text = "STATUS: 100% OFFLINE (AIR-GAPPED)",
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = TacticalEmerald,
                     fontFamily = FontFamily.Monospace
@@ -233,10 +275,10 @@ fun TacticalHeader(
             }
 
             Text(
-                text = "AES-256-GCM + PBKDF2",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TacticalTextSecondary,
+                text = "KEDOK: ${activeDisguiseName.uppercase()}",
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = TacticalCyan,
                 fontFamily = FontFamily.Monospace
             )
         }

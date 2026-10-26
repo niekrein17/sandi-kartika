@@ -248,6 +248,45 @@ fun EmbedScreen(
                             )
                         }
                     }
+
+                    if (embedState.opsecSanitized) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(TacticalEmerald.copy(alpha = 0.12f))
+                                .border(1.dp, TacticalEmerald.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Shield,
+                                        contentDescription = null,
+                                        tint = TacticalEmerald,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "OPSEC BERSIH: EXIF & GEOTAG GPS DIHAPUS",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TacticalEmerald,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                                if (embedState.opsecStrippedTags.isNotEmpty()) {
+                                    Text(
+                                        text = "Metadata dinetralisir: ${embedState.opsecStrippedTags.joinToString(", ")}",
+                                        fontSize = 9.sp,
+                                        color = TacticalTextSecondary,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -756,6 +795,60 @@ fun EmbedScreen(
                             Text(
                                 text = "UJI URAI SEKARANG",
                                 fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                val bundleUris = viewModel.getBundledShareUris()
+                                val shareIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                                    type = "*/*"
+                                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, bundleUris)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Bagikan Paket Taktis (.PNG Stego + Web Decryptor)"))
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(42.dp)
+                                .testTag("share_bundle_button"),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = TacticalGold,
+                                contentColor = TacticalBlack
+                            )
+                        ) {
+                            Text(
+                                text = "PAKET LENGKAP (.PNG + .HTML)",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.setWebSuitePreviewVisible(true)
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(42.dp)
+                                .testTag("open_web_preview_btn"),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TacticalEmerald)
+                        ) {
+                            Text(
+                                text = "BUKA WEB TOOL (OFFLINE)",
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace
                             )

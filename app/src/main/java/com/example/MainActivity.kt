@@ -69,9 +69,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.MainViewModel
 import com.example.ui.TacticalNavTab
+import com.example.ui.components.AppDisguiseDialog
 import com.example.ui.components.TacticalHeader
+import com.example.ui.components.WebSuitePreviewDialog
 import com.example.ui.screens.CalculatorDisguiseScreen
-import com.example.ui.screens.DoctrineScreen
 import com.example.ui.screens.EmbedScreen
 import com.example.ui.screens.ExtractScreen
 import com.example.ui.screens.InspectorScreen
@@ -84,6 +85,7 @@ import com.example.ui.theme.TacticalDarkSurface
 import com.example.ui.theme.TacticalEmerald
 import com.example.ui.theme.TacticalTextPrimary
 import com.example.ui.theme.TacticalTextSecondary
+import com.example.util.AppDisguiseManager
 
 class MainActivity : ComponentActivity() {
 
@@ -126,6 +128,9 @@ fun MainContent(
     val isCamouflageActive by viewModel.isCamouflageDisguiseActive.collectAsState()
     val currentTab by viewModel.currentTab.collectAsState()
     val panicNotice by viewModel.panicWipeNotice.collectAsState()
+    val showDisguiseDialog by viewModel.showDisguiseDialog.collectAsState()
+    val activeDisguise by viewModel.activeDisguiseProfile.collectAsState()
+    val showWebSuitePreview by viewModel.showWebSuitePreview.collectAsState()
     var showPanicDialog by remember { mutableStateOf(false) }
 
     // If camouflage disguise mode is on, render authentic working calculator
@@ -153,7 +158,16 @@ fun MainContent(
                 onLockCamouflage = {
                     viewModel.setCamouflageDisguiseActive(true)
                     onVibrate()
-                }
+                },
+                onOpenDisguise = {
+                    viewModel.setDisguiseDialogVisible(true)
+                    onVibrate()
+                },
+                onOpenWebSuite = {
+                    viewModel.setWebSuitePreviewVisible(true)
+                    onVibrate()
+                },
+                activeDisguiseName = activeDisguise.displayName
             )
         },
         bottomBar = {
@@ -170,7 +184,6 @@ fun MainContent(
                         TacticalNavTab.EMBED -> Pair(Icons.Default.Lock, "SISIP")
                         TacticalNavTab.EXTRACT -> Pair(Icons.Default.LockOpen, "URAI")
                         TacticalNavTab.INSPECTOR -> Pair(Icons.Default.Analytics, "INSPEKTUR")
-                        TacticalNavTab.DOCTRINE -> Pair(Icons.Default.MenuBook, "DOKTRIN")
                     }
 
                     NavigationBarItem(
@@ -217,7 +230,6 @@ fun MainContent(
                 TacticalNavTab.EMBED -> EmbedScreen(viewModel = viewModel)
                 TacticalNavTab.EXTRACT -> ExtractScreen(viewModel = viewModel)
                 TacticalNavTab.INSPECTOR -> InspectorScreen(viewModel = viewModel)
-                TacticalNavTab.DOCTRINE -> DoctrineScreen()
             }
 
             // Panic notice overlay banner
@@ -350,6 +362,28 @@ fun MainContent(
             },
             containerColor = TacticalDarkSurface,
             shape = RoundedCornerShape(12.dp)
+        )
+    }
+
+    // App Icon & Launcher Identity Disguise Dialog
+    if (showDisguiseDialog) {
+        AppDisguiseDialog(
+            currentProfile = activeDisguise,
+            onSelectProfile = { profile ->
+                viewModel.selectDisguiseProfile(profile)
+                onVibrate()
+            },
+            onDismiss = { viewModel.setDisguiseDialogVisible(false) }
+        )
+    }
+
+    // 100% Offline Single-File HTML Web Suite Preview Dialog
+    if (showWebSuitePreview) {
+        val (htmlFile, htmlUri) = viewModel.getStandaloneHtmlFile()
+        WebSuitePreviewDialog(
+            htmlFile = htmlFile,
+            htmlUri = htmlUri,
+            onDismiss = { viewModel.setWebSuitePreviewVisible(false) }
         )
     }
 }

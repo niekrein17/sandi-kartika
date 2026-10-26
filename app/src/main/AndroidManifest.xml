@@ -18,13 +18,67 @@
             android:exported="true"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.MyApplication">
+            android:theme="@style/Theme.MyApplication" />
+
+        <!-- 1. Default Military Tactical Identity -->
+        <activity-alias
+            android:name=".MainActivityDefault"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:label="@string/app_name"
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <!-- 2. Disguise: Calculator -->
+        <activity-alias
+            android:name=".MainActivityCalculatorDisguise"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_disguise_calculator"
+            android:roundIcon="@drawable/ic_disguise_calculator"
+            android:label="@string/disguise_calc_label"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- 3. Disguise: System Tools -->
+        <activity-alias
+            android:name=".MainActivityToolsDisguise"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_disguise_tools"
+            android:roundIcon="@drawable/ic_disguise_tools"
+            android:label="@string/disguise_tools_label"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- 4. Disguise: Weather Notes -->
+        <activity-alias
+            android:name=".MainActivityWeatherDisguise"
+            android:targetActivity=".MainActivity"
+            android:icon="@drawable/ic_disguise_weather"
+            android:roundIcon="@drawable/ic_disguise_weather"
+            android:label="@string/disguise_weather_label"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <provider
             android:name="androidx.core.content.FileProvider"

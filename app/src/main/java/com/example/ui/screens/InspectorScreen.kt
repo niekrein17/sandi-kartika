@@ -24,8 +24,12 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -307,6 +311,129 @@ fun InspectorScreen(
                         color = TacticalTextMuted,
                         fontFamily = FontFamily.Monospace
                     )
+                }
+            }
+        }
+
+        // Section 4: Simulasi Interogasi Musuh & Steganalisis Chi-Square
+        item {
+            TacticalCard(
+                title = "Simulasi Interogasi Musuh & Steganalisis",
+                badgeText = "DURESS TESTING",
+                badgeColor = TacticalGold
+            ) {
+                Text(
+                    text = "Uji skenario lapangan saat prajurit tertangkap dan media dianalisis oleh perangkat forensik pihak lawan:",
+                    fontSize = 10.5.sp,
+                    color = TacticalTextSecondary
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.runDuressSimulation("NO_KEY") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .testTag("sim_no_key_btn"),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TacticalAlertRed)
+                        ) {
+                            Text("1. TANPA KUNCI", fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        }
+
+                        Button(
+                            onClick = { viewModel.runDuressSimulation("DECOY") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .testTag("sim_decoy_btn"),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = TacticalCyan,
+                                contentColor = TacticalBlack
+                            )
+                        ) {
+                            Text("2. SANDI UMPAN", fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.runDuressSimulation("MASTER") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .testTag("sim_master_btn"),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TacticalEmerald)
+                        ) {
+                            Text("3. SANDI MASTER", fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.runDuressSimulation("CHI_SQUARE") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .testTag("sim_chisquare_btn"),
+                            shape = RoundedCornerShape(6.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TacticalGold)
+                        ) {
+                            Text("4. UJI CHI-SQUARE", fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+                }
+
+                if (inspectorState.duressSimResult != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(TacticalDarkSurface)
+                            .border(1.dp, TacticalCardBorder, RoundedCornerShape(6.dp))
+                            .padding(12.dp)
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Shield,
+                                    contentDescription = null,
+                                    tint = when (inspectorState.duressSimType) {
+                                        "DECOY" -> TacticalCyan
+                                        "MASTER" -> TacticalEmerald
+                                        "CHI_SQUARE" -> TacticalGold
+                                        else -> TacticalAlertRed
+                                    },
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "LAPORAN FORENSIK LAWAN",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TacticalTextPrimary,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = inspectorState.duressSimResult!!,
+                                fontSize = 10.sp,
+                                lineHeight = 15.sp,
+                                color = TacticalTextSecondary,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    }
                 }
             }
         }
