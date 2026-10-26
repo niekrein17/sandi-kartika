@@ -94,9 +94,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _panicWipeNotice = MutableStateFlow<String?>(null)
     val panicWipeNotice: StateFlow<String?> = _panicWipeNotice.asStateFlow()
 
+    private val _isCamouflageDisguiseActive = MutableStateFlow(false)
+    val isCamouflageDisguiseActive: StateFlow<Boolean> = _isCamouflageDisguiseActive.asStateFlow()
+
     init {
         // Load default preset carrier bitmap
         loadPresetCarrier(0)
+    }
+
+    fun setCamouflageDisguiseActive(active: Boolean) {
+        _isCamouflageDisguiseActive.value = active
+    }
+
+    fun exportStandaloneHtml(): Uri {
+        val context = getApplication<Application>()
+        val (_, uri) = com.example.stego.StandaloneHtmlGenerator.generateHtmlFile(context)
+        return uri
     }
 
     fun selectTab(tab: TacticalNavTab) {

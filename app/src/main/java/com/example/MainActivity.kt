@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.MainViewModel
 import com.example.ui.TacticalNavTab
 import com.example.ui.components.TacticalHeader
+import com.example.ui.screens.CalculatorDisguiseScreen
 import com.example.ui.screens.DoctrineScreen
 import com.example.ui.screens.EmbedScreen
 import com.example.ui.screens.ExtractScreen
@@ -122,9 +123,21 @@ fun MainContent(
     viewModel: MainViewModel,
     onVibrate: () -> Unit
 ) {
+    val isCamouflageActive by viewModel.isCamouflageDisguiseActive.collectAsState()
     val currentTab by viewModel.currentTab.collectAsState()
     val panicNotice by viewModel.panicWipeNotice.collectAsState()
     var showPanicDialog by remember { mutableStateOf(false) }
+
+    // If camouflage disguise mode is on, render authentic working calculator
+    if (isCamouflageActive) {
+        CalculatorDisguiseScreen(
+            onUnlockTacticalSuite = {
+                viewModel.setCamouflageDisguiseActive(false)
+                onVibrate()
+            }
+        )
+        return
+    }
 
     // Handle back button: if not on EMBED tab, back returns to EMBED
     BackHandler(enabled = currentTab != TacticalNavTab.EMBED) {
@@ -136,7 +149,11 @@ fun MainContent(
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TacticalHeader(
-                onPanicZeroize = { showPanicDialog = true }
+                onPanicZeroize = { showPanicDialog = true },
+                onLockCamouflage = {
+                    viewModel.setCamouflageDisguiseActive(true)
+                    onVibrate()
+                }
             )
         },
         bottomBar = {

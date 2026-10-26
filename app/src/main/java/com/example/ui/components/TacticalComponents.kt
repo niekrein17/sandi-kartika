@@ -78,6 +78,7 @@ import com.example.ui.theme.TacticalTextSecondary
 @Composable
 fun TacticalHeader(
     onPanicZeroize: () -> Unit,
+    onLockCamouflage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -162,22 +163,41 @@ fun TacticalHeader(
                 }
             }
 
-            // Panic Button
-            IconButton(
-                onClick = onPanicZeroize,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(TacticalAlertRedDim)
-                    .border(1.dp, TacticalAlertRed, RoundedCornerShape(8.dp))
-                    .size(40.dp)
-                    .testTag("panic_zeroize_button")
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DeleteSweep,
-                    contentDescription = "Emergency Panic Zeroize Memory",
-                    tint = TacticalAlertRed,
-                    modifier = Modifier.size(20.dp)
-                )
+            // Top Actions: Lock to Disguise & Panic Zeroize
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(
+                    onClick = onLockCamouflage,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(TacticalCardSurface)
+                        .border(1.dp, TacticalEmerald.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                        .size(40.dp)
+                        .testTag("lock_to_calculator_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Kunci ke Mode Penyamaran Kalkulator",
+                        tint = TacticalEmerald,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = onPanicZeroize,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(TacticalAlertRedDim)
+                        .border(1.dp, TacticalAlertRed, RoundedCornerShape(8.dp))
+                        .size(40.dp)
+                        .testTag("panic_zeroize_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteSweep,
+                        contentDescription = "Emergency Panic Zeroize Memory",
+                        tint = TacticalAlertRed,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
 
