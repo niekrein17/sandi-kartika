@@ -1,0 +1,481 @@
+package com.example.ui
+
+import android.app.Application
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.crypto.CryptoEngine
+import com.example.data.model.DecryptedResult
+import com.example.data.model.ExtractionStatus
+import com.example.data.model.PayloadClassification
+import com.example.data.model.SecretPayload
+import com.example.data.model.TacticalTemplate
+import com.example.stego.StegoAnalyzer
+import com.example.stego.StegoEngine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+
+enum class TacticalNavTab(val title: String, val badge: String) {
+    EMBED("SISIP SANDI", "ENCODE"),
+    EXTRACT("URAI SANDI", "DECODE"),
+    INSPECTOR("INSPEKTUR", "ANALYZE"),
+    DOCTRINE("DOKTRIN & SOP", "OPSEC")
+}
+
+data class EmbedUiState(
+    val selectedPresetIndex: Int = 0,
+    val carrierBitmap: Bitmap? = null,
+    val isDeniableMode: Boolean = true, // Plausible deniability default
+    val masterPassword: String = "KARTIKA-2026",
+    val masterTitle: String = "PO KARTIKA SAKTI - FASE 2",
+    val masterMessage: String = "1. Sasaran utama: Penetralan radar sektor barat daya.\n2. Waktu H-Hour: 04:30 WIB.\n3. Pergerakan senyap rintis lembah 4.\n4. Kode panggil sandi: RAJAWALI-9.",
+    val masterCoordinates: String = "07°14'22.1\"S 110°24'18.8\"E (MGRS: 49M FM 3418 9912)",
+    val masterClassification: PayloadClassification = PayloadClassification.TOP_SECRET,
+    // Decoy (Kamuflase)
+    val decoyPassword: String = "BAMA-LOGISTIK",
+    val decoyTitle: String = "LAPORAN RUTIN BAMA PEKAN KE-IV",
+    val decoyMessage: String = "Kepada Yth. Pasi Logistik:\nRekapitulasi stok bama aman untuk 14 hari:\n- Beras: 450 Kg\n- Minyak: 60 L\n- Daging T2: 120 pack\nPermohonan tambahan tabung gas.",
+    val decoyClassification: PayloadClassification = PayloadClassification.DECOY_ROUTINE,
+    // Tactical Time-Lock
+    val isTimeLockEnabled: Boolean = false,
+    val timeLockHoursAhead: Int = 4,
+    // Processing / Output
+    val isProcessing: Boolean = false,
+    val stegoBitmap: Bitmap? = null,
+    val savedFile: File? = null,
+    val savedUri: Uri? = null,
+    val payloadSizeBytes: Int = 0,
+    val hashSha256: String = "",
+    val error: String? = null
+)
+
+data class ExtractUiState(
+    val stegoBitmap: Bitmap? = null,
+    val passwordInput: String = "",
+    val isProcessing: Boolean = false,
+    val decryptedResult: DecryptedResult? = null,
+    val activeTimeLockBypass: Boolean = false,
+    val timeLockEvaluation: com.example.service.TacticalTimeLockService.TimeLockEvaluation? = null,
+    val showOfficerPinDialog: Boolean = false,
+    val error: String? = null
+)
+
+data class InspectorUiState(
+    val inspectedBitmap: Bitmap? = null,
+    val bitPlaneIndex: Int = 0,
+    val bitPlaneBitmap: Bitmap? = null,
+    val diffBitmap: Bitmap? = null,
+    val isProcessing: Boolean = false
+)
+
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val _currentTab = MutableStateFlow(TacticalNavTab.EMBED)
+    val currentTab: StateFlow<TacticalNavTab> = _currentTab.asStateFlow()
+
+    private val _embedState = MutableStateFlow(EmbedUiState())
+    val embedState: StateFlow<EmbedUiState> = _embedState.asStateFlow()
+
+    private val _extractState = MutableStateFlow(ExtractUiState())
+    val extractState: StateFlow<ExtractUiState> = _extractState.asStateFlow()
+
+    private val _inspectorState = MutableStateFlow(InspectorUiState())
+    val inspectorState: StateFlow<InspectorUiState> = _inspectorState.asStateFlow()
+
+    private val _panicWipeNotice = MutableStateFlow<String?>(null)
+    val panicWipeNotice: StateFlow<String?> = _panicWipeNotice.asStateFlow()
+
+    init {
+        // Load default preset carrier bitmap
+        loadPresetCarrier(0)
+    }
+
+    fun selectTab(tab: TacticalNavTab) {
+        _currentTab.value = tab
+    }
+
+    // ==========================================
+    // EMBED FLOW
+    // ==========================================
+    fun loadPresetCarrier(presetIndex: Int) {
+        viewModelScope.launch {
+            val bmp = withContext(Dispatchers.Default) {
+                StegoEngine.generatePresetBitmap(presetIndex)
+            }
+            _embedState.update {
+                it.copy(
+                    selectedPresetIndex = presetIndex,
+                    carrierBitmap = bmp,
+                    stegoBitmap = null,
+                    savedFile = null,
+                    savedUri = null,
+                    error = null
+                )
+            }
+            updateInspectorBitmap(bmp)
+        }
+    }
+
+    fun setCustomCarrierUri(uri: Uri) {
+        viewModelScope.launch {
+            val context = getApplication<Application>()
+            val bmp = withContext(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        val options = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.ARGB_8888 }
+                        BitmapFactory.decodeStream(stream, null, options)
+                    }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            if (bmp != null) {
+                _embedState.update {
+                    it.copy(
+                        selectedPresetIndex = -1,
+                        carrierBitmap = bmp,
+                        stegoBitmap = null,
+                        savedFile = null,
+                        savedUri = null,
+                        error = null
+                    )
+                }
+                updateInspectorBitmap(bmp)
+            } else {
+                _embedState.update { it.copy(error = "Gagal memuat citra dari perangkat.") }
+            }
+        }
+    }
+
+    fun toggleDeniableMode(enabled: Boolean) {
+        _embedState.update { it.copy(isDeniableMode = enabled) }
+    }
+
+    fun updateMasterFields(
+        password: String? = null,
+        title: String? = null,
+        message: String? = null,
+        coordinates: String? = null,
+        classification: PayloadClassification? = null
+    ) {
+        _embedState.update { current ->
+            current.copy(
+                masterPassword = password ?: current.masterPassword,
+                masterTitle = title ?: current.masterTitle,
+                masterMessage = message ?: current.masterMessage,
+                masterCoordinates = coordinates ?: current.masterCoordinates,
+                masterClassification = classification ?: current.masterClassification
+            )
+        }
+    }
+
+    fun applyMasterTemplate(template: TacticalTemplate) {
+        _embedState.update {
+            it.copy(
+                masterTitle = template.defaultTitle,
+                masterMessage = template.defaultMessage,
+                masterCoordinates = template.defaultCoordinates ?: "",
+                masterClassification = template.defaultClassification
+            )
+        }
+    }
+
+    fun updateDecoyFields(
+        password: String? = null,
+        title: String? = null,
+        message: String? = null
+    ) {
+        _embedState.update { current ->
+            current.copy(
+                decoyPassword = password ?: current.decoyPassword,
+                decoyTitle = title ?: current.decoyTitle,
+                decoyMessage = message ?: current.decoyMessage
+            )
+        }
+    }
+
+    fun applyDecoyTemplate(template: TacticalTemplate) {
+        _embedState.update {
+            it.copy(
+                decoyTitle = template.defaultTitle,
+                decoyMessage = template.defaultMessage
+            )
+        }
+    }
+
+    fun toggleTimeLock(enabled: Boolean, hoursAhead: Int? = null) {
+        _embedState.update {
+            it.copy(
+                isTimeLockEnabled = enabled,
+                timeLockHoursAhead = hoursAhead ?: it.timeLockHoursAhead
+            )
+        }
+    }
+
+    fun executeEmbedAndStego() {
+        val state = _embedState.value
+        val carrier = state.carrierBitmap
+        if (carrier == null) {
+            _embedState.update { it.copy(error = "Pilih citra carrier terlebih dahulu.") }
+            return
+        }
+
+        if (state.masterPassword.isBlank()) {
+            _embedState.update { it.copy(error = "Kata sandi utama tidak boleh kosong.") }
+            return
+        }
+
+        if (state.isDeniableMode && state.decoyPassword.isBlank()) {
+            _embedState.update { it.copy(error = "Kata sandi umpan/darurat wajib diisi dalam mode Sandi Kamuflase.") }
+            return
+        }
+
+        if (state.isDeniableMode && state.masterPassword == state.decoyPassword) {
+            _embedState.update { it.copy(error = "Sandi utama dan sandi umpan tidak boleh sama demi keamanan Plausible Deniability.") }
+            return
+        }
+
+        _embedState.update { it.copy(isProcessing = true, error = null) }
+
+        viewModelScope.launch {
+            try {
+                val timeLockEpoch = if (state.isTimeLockEnabled) {
+                    System.currentTimeMillis() + (state.timeLockHoursAhead * 3600 * 1000L)
+                } else 0L
+
+                val masterPayload = SecretPayload(
+                    type = "REAL",
+                    title = state.masterTitle,
+                    message = state.masterMessage,
+                    coordinates = state.masterCoordinates.ifBlank { null },
+                    classification = state.masterClassification,
+                    timeLockEpochMs = timeLockEpoch
+                )
+
+                val decoyPayload = if (state.isDeniableMode) {
+                    SecretPayload(
+                        type = "DECOY",
+                        title = state.decoyTitle,
+                        message = state.decoyMessage,
+                        coordinates = null,
+                        classification = state.decoyClassification,
+                        timeLockEpochMs = 0L
+                    )
+                } else null
+
+                val encryptedBytes = withContext(Dispatchers.Default) {
+                    CryptoEngine.buildEncryptedPackage(
+                        masterPayload = masterPayload,
+                        masterPassword = state.masterPassword,
+                        decoyPayload = decoyPayload,
+                        decoyPassword = if (state.isDeniableMode) state.decoyPassword else null
+                    )
+                }
+
+                val stegoBmp = withContext(Dispatchers.Default) {
+                    StegoEngine.embedPayload(carrier, encryptedBytes)
+                }
+
+                val context = getApplication<Application>()
+                val (file, uri) = withContext(Dispatchers.IO) {
+                    StegoEngine.saveLosslessStegoImage(context, stegoBmp)
+                }
+
+                val hash = CryptoEngine.computeSha256(encryptedBytes)
+
+                _embedState.update {
+                    it.copy(
+                        isProcessing = false,
+                        stegoBitmap = stegoBmp,
+                        savedFile = file,
+                        savedUri = uri,
+                        payloadSizeBytes = encryptedBytes.size,
+                        hashSha256 = hash,
+                        error = null
+                    )
+                }
+
+                // Automatically load stego into extract tab for seamless verification
+                _extractState.update {
+                    it.copy(stegoBitmap = stegoBmp, passwordInput = "", decryptedResult = null, error = null)
+                }
+
+                // Update inspector with diff map
+                val diff = withContext(Dispatchers.Default) {
+                    StegoAnalyzer.generateAmplifiedDiffMap(carrier, stegoBmp)
+                }
+                _inspectorState.update {
+                    it.copy(
+                        inspectedBitmap = stegoBmp,
+                        diffBitmap = diff
+                    )
+                }
+                updateBitplane(0)
+
+            } catch (e: Exception) {
+                _embedState.update {
+                    it.copy(
+                        isProcessing = false,
+                        error = "Gagal menyisipkan pesan: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    // ==========================================
+    // EXTRACT FLOW
+    // ==========================================
+    fun setExtractBitmapFromUri(uri: Uri) {
+        viewModelScope.launch {
+            val context = getApplication<Application>()
+            val bmp = withContext(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        val options = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.ARGB_8888 }
+                        BitmapFactory.decodeStream(stream, null, options)
+                    }
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            if (bmp != null) {
+                _extractState.update {
+                    it.copy(stegoBitmap = bmp, decryptedResult = null, error = null)
+                }
+                updateInspectorBitmap(bmp)
+            } else {
+                _extractState.update { it.copy(error = "Gagal membaca berkas citra.") }
+            }
+        }
+    }
+
+    fun setExtractPasswordInput(password: String) {
+        _extractState.update { it.copy(passwordInput = password) }
+    }
+
+    fun setOfficerDialogVisible(visible: Boolean) {
+        _extractState.update { it.copy(showOfficerPinDialog = visible) }
+    }
+
+    fun executeExtraction(officerOverridePin: String? = null) {
+        val state = _extractState.value
+        val bmp = state.stegoBitmap
+        if (bmp == null) {
+            _extractState.update { it.copy(error = "Pilih citra stego yang akan diurai.") }
+            return
+        }
+
+        if (state.passwordInput.isBlank()) {
+            _extractState.update { it.copy(error = "Masukkan kata sandi terlebih dahulu.") }
+            return
+        }
+
+        _extractState.update { it.copy(isProcessing = true, error = null) }
+
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.Default) {
+                val payloadBytes = StegoEngine.extractPayload(bmp)
+                if (payloadBytes == null) {
+                    DecryptedResult(
+                        status = ExtractionStatus.ERROR_NO_PAYLOAD,
+                        errorMessage = "Tidak ditemukan muatan sandi tersembunyi pada citra ini atau berkas telah terkompresi rusak."
+                    )
+                } else {
+                    CryptoEngine.decryptPackage(payloadBytes, state.passwordInput, officerOverridePin)
+                }
+            }
+
+            val eval = result.payload?.timeLockEpochMs?.let {
+                com.example.service.TacticalTimeLockService.instance.evaluateTimeLock(it, officerOverridePin)
+            }
+
+            _extractState.update {
+                it.copy(
+                    isProcessing = false,
+                    decryptedResult = result,
+                    timeLockEvaluation = eval,
+                    activeTimeLockBypass = eval?.canDecryptNow == true && eval.status == com.example.service.TacticalTimeLockService.TimeLockStatus.OFFICER_OVERRIDDEN,
+                    error = if (result.payload == null) result.errorMessage else null
+                )
+            }
+        }
+    }
+
+    fun applyOfficerOverride(pin: String) {
+        setOfficerDialogVisible(false)
+        executeExtraction(officerOverridePin = pin)
+    }
+
+    fun toggleTimeLockBypass() {
+        _extractState.update { it.copy(showOfficerPinDialog = true) }
+    }
+
+    // ==========================================
+    // INSPECTOR FLOW
+    // ==========================================
+    fun updateInspectorBitmap(bitmap: Bitmap) {
+        viewModelScope.launch {
+            _inspectorState.update { it.copy(inspectedBitmap = bitmap) }
+            updateBitplane(_inspectorState.value.bitPlaneIndex)
+        }
+    }
+
+    fun updateBitplane(index: Int) {
+        val bmp = _inspectorState.value.inspectedBitmap ?: _embedState.value.stegoBitmap ?: _embedState.value.carrierBitmap
+        if (bmp == null) return
+
+        viewModelScope.launch {
+            _inspectorState.update { it.copy(isProcessing = true, bitPlaneIndex = index) }
+            val bp = withContext(Dispatchers.Default) {
+                StegoAnalyzer.extractBitPlaneBitmap(bmp, index)
+            }
+            _inspectorState.update {
+                it.copy(
+                    isProcessing = false,
+                    bitPlaneBitmap = bp
+                )
+            }
+        }
+    }
+
+    // ==========================================
+    // EMERGENCY PANIC WIPE (ZEROIZE MEMORY)
+    // ==========================================
+    fun triggerEmergencyZeroize() {
+        _embedState.update {
+            it.copy(
+                masterPassword = "",
+                masterMessage = "",
+                masterCoordinates = "",
+                decoyPassword = "",
+                decoyMessage = "",
+                stegoBitmap = null,
+                savedFile = null,
+                savedUri = null,
+                hashSha256 = ""
+            )
+        }
+        _extractState.update {
+            it.copy(
+                passwordInput = "",
+                decryptedResult = null,
+                error = null
+            )
+        }
+        _panicWipeNotice.value = "MEMORI TAKTIS BERHASIL DINOLKAN (ZEROIZE COMPLETE). SELURUH KUNCI DAN PESAN DIHAPUS DARI RAM."
+    }
+
+    fun dismissPanicNotice() {
+        _panicWipeNotice.value = null
+    }
+}

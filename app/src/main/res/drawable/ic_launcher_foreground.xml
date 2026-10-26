@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Shield Border -->
+    <path
+        android:fillColor="#153625"
+        android:strokeColor="#2FE092"
+        android:strokeWidth="2"
+        android:pathData="M54,23 L79,33 C79,57 68,75 54,85 C40,75 29,57 29,33 Z" />
+
+    <!-- Inner Shield Accent -->
+    <path
+        android:fillColor="#0D2117"
+        android:strokeColor="#178854"
+        android:strokeWidth="1.2"
+        android:pathData="M54,29 L73,37 C73,56 64,70 54,78 C44,70 35,56 35,37 Z" />
+
+    <!-- Tactical Kartika (8-pointed Star Emblem) in Golden/Amber & Emerald -->
+    <!-- Center 54, 52 -->
+    <path
+        android:fillColor="#F6C444"
+        android:pathData="M54,36 L56.5,47 L67.5,47 L58.5,53.5 L62,64 L54,57.5 L46,64 L49.5,53.5 L40.5,47 L51.5,47 Z" />
+
+    <!-- Cipher Keyhole / Cryptographic Core Node -->
+    <path
+        android:fillColor="#0A1812"
+        android:pathData="M54,49 A3,3 0 1,0 54,55 A3,3 0 1,0 54,49 Z" />
+    <path
+        android:fillColor="#0A1812"
+        android:pathData="M52.8,53 L55.2,53 L56,60 L52,60 Z" />
+
+    <!-- Binary / Cryptographic Dots and Accents -->
+    <path
+        android:fillColor="#2FE092"
+        android:pathData="M43,41 A1.5,1.5 0 1,0 43,44 A1.5,1.5 0 1,0 43,41 Z" />
+    <path
+        android:fillColor="#2FE092"
+        android:pathData="M65,41 A1.5,1.5 0 1,0 65,44 A1.5,1.5 0 1,0 65,41 Z" />
+    <path
+        android:fillColor="#2FE092"
+        android:pathData="M54,70 A1.8,1.8 0 1,0 54,73.6 A1.8,1.8 0 1,0 54,70 Z" />
+</vector>
